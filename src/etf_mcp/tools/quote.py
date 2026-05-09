@@ -1,1 +1,74 @@
-"""Tool: get_quote — latest price via Yahoo Finance, fallback to justETF."""
+"""Tool: get_quote — latest price via Yahoo Finance, fallback to justETF Gettex."""
+from __future__ import annotations
+
+import asyncio
+
+from fastmcp import FastMCP
+from pydantic import BaseModel, Field
+
+from etf_mcp.sources import yahoo
+
+
+class Quote(BaseModel):
+    symbol: str
+    isin: str | None = None
+    currency: str | None = None
+    price: float | None = None
+    previous_close: float | None = None
+    open: float | None = None
+    day_high: float | None = None
+    day_low: float | None = None
+    volume: int | None = None
+    market_cap: float | None = Field(None, description="Market cap in the instrument's native currency")
+    as_of: str | None = Field(None, description="ISO 8601 date string")
+    source: str = Field(description="'yahoo' or 'justetf_gettex'")
+
+
+def register(mcp: FastMCP) -> None:
+    @mcp.tool()
+    async def get_quote(symbol: str, isin: str | None = None) -> Quote:
+        """Return the latest price quote for an ETF.
+
+        Tries Yahoo Finance first using the ticker symbol (e.g. 'IWDA.AS',
+        'VWCE.DE', 'CSPX.L'). If Yahoo fails and an ISIN is provided, falls
+        back to the justETF Gettex live quote (EUR, European hours only).
+
+        Use this for a current price check. Use get_history for OHLCV series.
+        Do not use this for portfolio valuation — use Ghostfolio for that.
+
+        symbol: Yahoo Finance ticker, e.g. 'IWDA.AS' or 'VWCE.DE'
+        isin:   Optional ISIN for Gettex fallback, e.g. 'IE00B4L5Y983'
+        """
+        try:
+            data = await yahoo.fetch_quote(symbol)
+            return Quote(source="yahoo", isin=isin, **data)
+        except Exception as yahoo_err:
+            if not isin:
+                raise
+
+            # Gettex fallback — justETF live quote (EUR, Gettex only)
+            try:
+                import justetf_scraping
+
+                def _gettex() -> dict:
+                    quotes = list(justetf_scraping.iterate_live_quote(isin))
+                    if not quotes:
+                        raise RuntimeError("no gettex quote received")
+                    q = quotes[0]
+                    return {
+                        "symbol": symbol,
+                        "currency": q.get("currency", "EUR"),
+                        "price": q.get("last"),
+                        "previous_close": None,
+                        "open": None,
+                        "day_high": None,
+                        "day_low": None,
+                        "volume": None,
+                        "market_cap": None,
+                        "as_of": q["timestamp"].date().isoformat() if q.get("timestamp") else None,
+                    }
+
+                data = await asyncio.to_thread(_gettex)
+                return Quote(source="justetf_gettex", isin=isin, **data)
+            except Exception:
+                raise yahoo_err  # surface the original Yahoo error if both fail

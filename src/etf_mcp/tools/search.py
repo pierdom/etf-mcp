@@ -1,1 +1,47 @@
 """Tool: search_etfs — justETF screener with filters for asset class, region, TER, etc."""
+from __future__ import annotations
+
+from fastmcp import FastMCP
+
+from etf_mcp.models import EtfSummary
+from etf_mcp.sources.justetf import fetch_screener
+
+
+def register(mcp: FastMCP) -> None:
+    @mcp.tool()
+    async def search_etfs(
+        asset_class: str | None = None,
+        region: str | None = None,
+        max_ter: float | None = None,
+        min_fund_size_eur: float | None = None,
+        distribution: str | None = None,
+        limit: int = 20,
+    ) -> list[EtfSummary]:
+        """Search and filter ETFs using the justETF screener.
+
+        This is the headline discovery tool — use it when you need to find
+        ETFs matching specific criteria. Ghostfolio cannot do this.
+
+        Results include TER, fund size, replication, distribution policy,
+        and 1/3/5-year returns. Use get_etf_profile to drill into a result,
+        or compare_etfs to put two or more side by side.
+
+        asset_class: 'equity', 'bonds', 'commodities', 'real_estate',
+                     'money_market', 'precious_metals', 'currency'
+        region:      'world', 'europe', 'north_america', 'asia_pacific',
+                     'emerging_markets', 'eastern_europe', 'latin_america',
+                     'africa'
+        max_ter:     Maximum TER as a decimal (0.002 = 0.20%, 20 bps)
+        min_fund_size_eur: Minimum fund size in EUR (1_000_000_000 = €1B)
+        distribution: 'Accumulating' or 'Distributing'
+        limit:       Maximum number of results to return (default 20)
+        """
+        rows = await fetch_screener(
+            asset_class=asset_class,
+            region=region,
+            max_ter=max_ter,
+            min_fund_size_eur=min_fund_size_eur,
+            distribution=distribution,
+            limit=limit,
+        )
+        return [EtfSummary(**r) for r in rows]

@@ -4,13 +4,17 @@ from __future__ import annotations
 from fastmcp import FastMCP
 
 from etf_mcp.config import config
-from etf_mcp.tools import etf_profile
+from etf_mcp.tools import etf_compare, etf_profile, history, quote, search
 
 mcp = FastMCP(name="etf-mcp", instructions="ETF research tools sourced from justETF and Yahoo Finance.")
 
 # Register all tools at import time so `fastmcp inspect/dev` sees them
 # without having to call main().
 etf_profile.register(mcp)
+quote.register(mcp)
+history.register(mcp)
+etf_compare.register(mcp)
+search.register(mcp)
 
 
 def main() -> None:
