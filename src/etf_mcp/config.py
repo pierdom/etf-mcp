@@ -1,0 +1,45 @@
+from __future__ import annotations
+
+import os
+from dataclasses import dataclass, field
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+load_dotenv()
+
+
+@dataclass
+class Config:
+    transport: str = field(
+        default_factory=lambda: os.getenv("MCP_TRANSPORT", "stdio")
+    )
+    http_host: str = field(
+        default_factory=lambda: os.getenv("MCP_HTTP_HOST", "127.0.0.1")
+    )
+    http_port: int = field(
+        default_factory=lambda: int(os.getenv("MCP_HTTP_PORT", "8765"))
+    )
+    http_bearer_token: str | None = field(
+        default_factory=lambda: os.getenv("MCP_HTTP_BEARER_TOKEN")
+    )
+    cache_path: Path = field(
+        default_factory=lambda: Path(
+            os.getenv("ETF_MCP_CACHE", "~/.cache/etf-mcp/cache.db")
+        ).expanduser()
+    )
+    ttl_quote: int = field(
+        default_factory=lambda: int(os.getenv("CACHE_TTL_QUOTE", "300"))
+    )
+    ttl_profile: int = field(
+        default_factory=lambda: int(os.getenv("CACHE_TTL_PROFILE", "86400"))
+    )
+    ttl_history: int = field(
+        default_factory=lambda: int(os.getenv("CACHE_TTL_HISTORY", "3600"))
+    )
+    log_level: str = field(
+        default_factory=lambda: os.getenv("LOG_LEVEL", "INFO")
+    )
+
+
+config = Config()
