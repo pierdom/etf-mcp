@@ -8,13 +8,12 @@ from etf_mcp.tools import etf_profile
 
 mcp = FastMCP(name="etf-mcp", instructions="ETF research tools sourced from justETF and Yahoo Finance.")
 
-
-def _register_tools() -> None:
-    etf_profile.register(mcp)
+# Register all tools at import time so `fastmcp inspect/dev` sees them
+# without having to call main().
+etf_profile.register(mcp)
 
 
 def main() -> None:
-    _register_tools()
     if config.transport == "http":
         if not config.http_bearer_token:
             raise RuntimeError("MCP_HTTP_BEARER_TOKEN must be set when MCP_TRANSPORT=http")
