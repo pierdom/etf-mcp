@@ -108,6 +108,41 @@ async def fetch_profile(isin: str) -> dict[str, Any]:
     return await asyncio.to_thread(_inner)
 
 
+def _row_to_summary(isin: str, row: Any) -> dict[str, Any]:
+    """Convert a load_overview DataFrame row to a summary dict."""
+    inc = row.get("inception_date")
+    return {
+        "isin": isin,
+        "name": row.get("name"),
+        "ticker": row.get("ticker"),
+        "fund_provider": None,
+        "fund_domicile": str(row.get("domicile_country")) if row.get("domicile_country") else None,
+        "fund_size_eur": (float(row["size"]) * 1_000_000) if row.get("size") and not math.isnan(float(row["size"])) else None,
+        "ter": _ter_to_decimal(row.get("ter")),
+        "replication": str(row.get("replication")) if row.get("replication") else None,
+        "distribution_policy": str(row.get("dividends")) if row.get("dividends") else None,
+        "currency_hedged": bool(row.get("hedged")),
+        "sustainability": bool(row.get("is_sustainable")),
+        "inception_date": inc.date().isoformat() if hasattr(inc, "date") else None,
+        "return_1y": _safe_float(row.get("last_year")),
+        "return_3y": _safe_float(row.get("last_three_years")),
+        "return_5y": _safe_float(row.get("last_five_years")),
+        "volatility_1y": _safe_float(row.get("last_year_volatility")),
+    }
+
+
+@cached(ttl_key="profile")
+async def fetch_summary(isin: str) -> dict[str, Any] | None:
+    """Fetch a lightweight summary row for a single ETF by ISIN from justETF."""
+    def _inner() -> dict[str, Any] | None:
+        df = load_overview(isin=isin)
+        if df.empty:
+            return None
+        return _row_to_summary(df.index[0], df.iloc[0])
+
+    return await asyncio.to_thread(_inner)
+
+
 @cached(ttl_key="profile")
 async def fetch_screener(
     asset_class: str | None = None,
@@ -162,27 +197,6 @@ async def fetch_screener(
 
         df = df.head(limit)
 
-        rows = []
-        for isin, row in df.iterrows():
-            inc = row.get("inception_date")
-            rows.append({
-                "isin": isin,
-                "name": row.get("name"),
-                "ticker": row.get("ticker"),
-                "fund_provider": None,
-                "fund_domicile": str(row.get("domicile_country")) if row.get("domicile_country") else None,
-                "fund_size_eur": (float(row["size"]) * 1_000_000) if row.get("size") and not math.isnan(float(row["size"])) else None,
-                "ter": _ter_to_decimal(row.get("ter")),
-                "replication": str(row.get("replication")) if row.get("replication") else None,
-                "distribution_policy": str(row.get("dividends")) if row.get("dividends") else None,
-                "currency_hedged": bool(row.get("hedged")),
-                "sustainability": bool(row.get("is_sustainable")),
-                "inception_date": inc.date().isoformat() if hasattr(inc, "date") else None,
-                "return_1y": _safe_float(row.get("last_year")),
-                "return_3y": _safe_float(row.get("last_three_years")),
-                "return_5y": _safe_float(row.get("last_five_years")),
-                "volatility_1y": _safe_float(row.get("last_year_volatility")),
-            })
-        return rows
+        return [_row_to_summary(isin, row) for isin, row in df.iterrows()]
 
     return await asyncio.to_thread(_inner)
