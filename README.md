@@ -58,7 +58,7 @@ Replace `<you>` with your username. Use `which uv` to confirm the uv path. Then 
 
 ## Docker deploy
 
-A pre-built multi-arch image (amd64, arm64, arm/v7) is published to the GitHub Container Registry on every push to `main`:
+A pre-built multi-arch image (amd64, arm64) is published to the GitHub Container Registry on every push to `main`:
 
 ```bash
 docker pull ghcr.io/pierdom/etf-mcp:edge
