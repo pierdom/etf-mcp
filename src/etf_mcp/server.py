@@ -2,11 +2,40 @@
 from __future__ import annotations
 
 from fastmcp import FastMCP
+from fastmcp.server.auth.auth import AccessToken, AuthProvider
 
 from etf_mcp.config import config
 from etf_mcp.tools import etf_compare, etf_profile, history, quote, search
 
-mcp = FastMCP(name="etf-mcp", instructions="ETF research tools sourced from justETF and Yahoo Finance.")
+
+class _StaticBearerAuth(AuthProvider):
+    """Accepts exactly one pre-shared bearer token; rejects everything else."""
+
+    def __init__(self, token: str) -> None:
+        super().__init__()
+        self._token = token
+
+    async def verify_token(self, token: str) -> AccessToken | None:
+        if token == self._token:
+            return AccessToken(token=token, client_id="homelab", scopes=[])
+        return None
+
+
+def _make_mcp() -> FastMCP:
+    auth = None
+    if config.transport == "http":
+        if not config.http_bearer_token:
+            raise RuntimeError("MCP_HTTP_BEARER_TOKEN must be set when MCP_TRANSPORT=http")
+        auth = _StaticBearerAuth(config.http_bearer_token)
+
+    return FastMCP(
+        name="etf-mcp",
+        instructions="ETF research tools sourced from justETF and Yahoo Finance.",
+        auth=auth,
+    )
+
+
+mcp = _make_mcp()
 
 # Register all tools at import time so `fastmcp inspect/dev` sees them
 # without having to call main().
@@ -19,8 +48,6 @@ search.register(mcp)
 
 def main() -> None:
     if config.transport == "http":
-        if not config.http_bearer_token:
-            raise RuntimeError("MCP_HTTP_BEARER_TOKEN must be set when MCP_TRANSPORT=http")
         mcp.run(
             transport="streamable-http",
             host=config.http_host,

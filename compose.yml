@@ -1,0 +1,18 @@
+services:
+  etf-mcp:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "8765:8765"
+    volumes:
+      - ~/Docker/etf-mcp/data:/data
+    environment:
+      MCP_TRANSPORT: http
+      MCP_HTTP_HOST: 0.0.0.0
+      MCP_HTTP_PORT: 8765
+      MCP_HTTP_BEARER_TOKEN: ${MCP_HTTP_BEARER_TOKEN}
+      ETF_MCP_CACHE: /data/cache.db
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      CACHE_TTL_QUOTE: ${CACHE_TTL_QUOTE:-300}
+      CACHE_TTL_PROFILE: ${CACHE_TTL_PROFILE:-86400}
+      CACHE_TTL_HISTORY: ${CACHE_TTL_HISTORY:-3600}
