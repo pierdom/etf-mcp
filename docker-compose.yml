@@ -1,5 +1,6 @@
 services:
   etf-mcp:
+    image: ghcr.io/pierdom/etf-mcp:edge
     build: .
     restart: unless-stopped
     ports:

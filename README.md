@@ -58,6 +58,29 @@ Replace `<you>` with your username. Use `which uv` to confirm the uv path. Then 
 
 ## Docker deploy
 
+A pre-built multi-arch image (amd64, arm64, arm/v7) is published to the GitHub Container Registry on every push to `main`:
+
+```bash
+docker pull ghcr.io/pierdom/etf-mcp:edge
+```
+
+To run it:
+
+```bash
+mkdir -p ~/Docker/etf-mcp/data
+docker run -d --restart unless-stopped \
+  -p 8765:8765 \
+  -v ~/Docker/etf-mcp/data:/data \
+  -e MCP_TRANSPORT=http \
+  -e MCP_HTTP_HOST=0.0.0.0 \
+  -e MCP_HTTP_PORT=8765 \
+  -e MCP_HTTP_BEARER_TOKEN=<your-token> \
+  -e ETF_MCP_CACHE=/data/cache.db \
+  ghcr.io/pierdom/etf-mcp:edge
+```
+
+Or with Docker Compose using the published image instead of building locally:
+
 ```bash
 cp .env.example .env
 # Edit .env — set MCP_HTTP_BEARER_TOKEN to a strong random value
