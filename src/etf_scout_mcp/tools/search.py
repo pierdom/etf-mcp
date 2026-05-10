@@ -20,7 +20,7 @@ def register(mcp: FastMCP) -> None:
         """Search and filter ETFs using the justETF screener.
 
         This is the headline discovery tool — use it when you need to find
-        ETFs matching specific criteria. Ghostfolio cannot do this.
+        ETFs matching specific criteria.
 
         Results include TER, fund size, replication, distribution policy,
         and 1/3/5-year returns. Use get_etf_profile to drill into a result,

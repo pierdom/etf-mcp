@@ -2,14 +2,14 @@
 
 [![Docker](https://github.com/pierdom/etf-scout-mcp/actions/workflows/docker.yml/badge.svg)](https://github.com/pierdom/etf-scout-mcp/actions/workflows/docker.yml)
 
-MCP server for ETF research via **justETF**, **Yahoo Finance**, and **OpenFIGI**. Complements a Ghostfolio MCP — this server focuses on fund discovery, profile depth, comparison, and exchange mapping. It does not do portfolio tracking or basic price lookups that Ghostfolio already handles.
+MCP server for ETF research via **justETF**, **Yahoo Finance**, and **OpenFIGI**. It focuses on fund discovery, profile depth, comparison, and exchange mapping. It becomes particularly powerful when used alongside tools that provide visibility into your portfolio — for example [Ghostfolio](https://ghostfol.io) and a ghostfolio-mcp server.
 
 ## Tools
 
 | Tool | Source | Description |
 |---|---|---|
 | `get_etf_profile` | justETF | Full profile: TER, replication, distribution, fund size, domicile, top holdings, country/sector breakdown |
-| `search_etfs` | justETF screener | Filter by asset class, region, TER, fund size, distribution — the headline feature Ghostfolio cannot do |
+| `search_etfs` | justETF screener | Filter by asset class, region, TER, fund size, distribution — the primary discovery tool |
 | `compare_etfs` | justETF | Side-by-side: TER, 1/3/5Y returns, fund size, distribution, replication |
 | `get_quote` | Yahoo → justETF Gettex | Latest price; falls back to Gettex live quote if Yahoo fails and an ISIN is provided |
 | `get_history` | yfinance | OHLCV history; configurable period (`1mo`–`max`) and interval (`1d`/`1wk`/`1mo`) |

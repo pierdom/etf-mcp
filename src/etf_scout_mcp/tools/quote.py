@@ -34,7 +34,8 @@ def register(mcp: FastMCP) -> None:
         back to the justETF Gettex live quote (EUR, European hours only).
 
         Use this for a current price check. Use get_history for OHLCV series.
-        Do not use this for portfolio valuation — use Ghostfolio for that.
+        This tool is for research only — for portfolio valuation, pair it
+        with a portfolio tool such as Ghostfolio (ghostfolio-mcp).
 
         symbol: Yahoo Finance ticker, e.g. 'IWDA.AS' or 'VWCE.DE'
         isin:   Optional ISIN for Gettex fallback, e.g. 'IE00B4L5Y983'

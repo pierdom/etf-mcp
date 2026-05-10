@@ -20,7 +20,8 @@ def register(mcp: FastMCP) -> None:
 
         Use get_etf_profile for deeper detail on a single fund (holdings,
         country/sector breakdowns). Use search_etfs to discover candidates
-        before comparing. Do not use for portfolio tracking — use Ghostfolio.
+        before comparing. This tool is for research only — pair it with a
+        portfolio tool such as Ghostfolio (ghostfolio-mcp) for tracking.
 
         isins: List of ISINs to compare, e.g. ['IE00B4L5Y983', 'IE00BK5BQT80']
         """

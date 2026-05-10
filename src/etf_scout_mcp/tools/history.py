@@ -27,7 +27,8 @@ def register(mcp: FastMCP) -> None:
 
         Use this to chart performance or compute custom metrics over time.
         Use get_quote for the latest price only.
-        Do not use this for portfolio return calculations — use Ghostfolio.
+        This tool is for research only — for portfolio return calculations,
+        pair it with a portfolio tool such as Ghostfolio (ghostfolio-mcp).
 
         symbol:   Yahoo Finance ticker, e.g. 'VWCE.DE' or 'CSPX.L'
         period:   Length of history: '1mo', '3mo', '6mo', '1y', '2y', '5y', '10y', 'max'

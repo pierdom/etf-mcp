@@ -18,8 +18,8 @@ def register(mcp: FastMCP) -> None:
 
         Use search_etfs instead if you need to discover or filter ETFs.
         Use get_quote for a live price. Use compare_etfs to see multiple funds
-        side by side. Do not use this for portfolio tracking — use Ghostfolio
-        for that.
+        side by side. This tool is for research only — for portfolio tracking,
+        pair it with a portfolio tool such as Ghostfolio (ghostfolio-mcp).
 
         isin: ISIN of the ETF, e.g. 'IE00B4L5Y983'
         """
