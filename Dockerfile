@@ -20,4 +20,4 @@ USER etfmcp
 
 EXPOSE 8765
 
-CMD ["/app/.venv/bin/python", "-m", "etf_mcp"]
+CMD ["/app/.venv/bin/python", "-m", "etf_scout_mcp"]

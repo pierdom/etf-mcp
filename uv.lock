@@ -420,7 +420,7 @@ wheels = [
 ]
 
 [[package]]
-name = "etf-mcp"
+name = "etf-scout-mcp"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
