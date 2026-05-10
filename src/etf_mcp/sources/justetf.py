@@ -9,11 +9,36 @@ from datetime import datetime
 from logging.handlers import RotatingFileHandler
 from typing import Any
 
+import requests as _requests
+from requests.adapters import HTTPAdapter as _HTTPAdapter
+
 import justetf_scraping
 from justetf_scraping.overview import load_overview
 
 from etf_mcp.cache import cached
 from etf_mcp.config import config
+
+# ---------------------------------------------------------------------------
+# Force a 30 s timeout on every requests.Session that justetf-scraping
+# creates internally. The library doesn't expose a session parameter, so
+# patching Session.__init__ is the least-invasive option. Without this,
+# a slow or unresponsive justETF server blocks threads indefinitely, which
+# starves the asyncio thread pool and causes unrelated tools to hang too.
+# ---------------------------------------------------------------------------
+
+class _TimeoutAdapter(_HTTPAdapter):
+    def send(self, request, **kwargs):  # type: ignore[override]
+        kwargs.setdefault("timeout", 30)
+        return super().send(request, **kwargs)
+
+_orig_session_init = _requests.Session.__init__
+
+def _patched_session_init(self, *args, **kwargs):  # type: ignore[misc]
+    _orig_session_init(self, *args, **kwargs)
+    self.mount("https://", _TimeoutAdapter())
+    self.mount("http://", _TimeoutAdapter())
+
+_requests.Session.__init__ = _patched_session_init  # type: ignore[method-assign]
 
 # ---------------------------------------------------------------------------
 # Logging — same rotating-file pattern as sources/yahoo.py
@@ -135,7 +160,11 @@ async def fetch_profile(isin: str) -> dict[str, Any]:
             ],
         }
 
-    return await asyncio.to_thread(_inner)
+    try:
+        return await asyncio.wait_for(asyncio.to_thread(_inner), timeout=45.0)
+    except asyncio.TimeoutError:
+        _log.warning("timeout fn=get_etf_overview isin=%s after 45s", isin)
+        raise RuntimeError(f"justETF request timed out for {isin}") from None
 
 
 def _row_to_summary(isin: str, row: Any) -> dict[str, Any]:
@@ -177,7 +206,11 @@ async def fetch_summary(isin: str) -> dict[str, Any] | None:
             return None
         return _row_to_summary(df.index[0], df.iloc[0])
 
-    return await asyncio.to_thread(_inner)
+    try:
+        return await asyncio.wait_for(asyncio.to_thread(_inner), timeout=45.0)
+    except asyncio.TimeoutError:
+        _log.warning("timeout fn=load_overview isin=%s after 45s", isin)
+        raise RuntimeError(f"justETF request timed out for {isin}") from None
 
 
 @cached(ttl_key="profile")
@@ -242,4 +275,8 @@ async def fetch_screener(
 
         return [_row_to_summary(isin, row) for isin, row in df.iterrows()]
 
-    return await asyncio.to_thread(_inner)
+    try:
+        return await asyncio.wait_for(asyncio.to_thread(_inner), timeout=60.0)
+    except asyncio.TimeoutError:
+        _log.warning("timeout fn=load_overview asset_class=%s region=%s after 60s", asset_class, region)
+        raise RuntimeError("justETF screener request timed out") from None
