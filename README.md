@@ -1,23 +1,25 @@
 # etf-mcp
 
-MCP server for ETF research via **justETF** and **Yahoo Finance**. Complements a Ghostfolio MCP — this server focuses on fund discovery, profile depth, and comparison. It does not do portfolio tracking or basic price lookups that Ghostfolio already handles.
+MCP server for ETF research via **justETF**, **Yahoo Finance**, and **OpenFIGI**. Complements a Ghostfolio MCP — this server focuses on fund discovery, profile depth, comparison, and exchange mapping. It does not do portfolio tracking or basic price lookups that Ghostfolio already handles.
 
 ## Tools
 
 | Tool | Source | Description |
 |---|---|---|
 | `get_etf_profile` | justETF | Full profile: TER, replication, distribution, fund size, domicile, top holdings, country/sector breakdown |
-| `get_quote` | Yahoo → justETF Gettex | Latest price; falls back to Gettex live quote if Yahoo fails and an ISIN is provided |
-| `get_history` | yfinance | OHLCV history; configurable period and interval |
-| `compare_etfs` | justETF | Side-by-side: TER, 1/3/5Y returns, fund size, distribution, replication |
 | `search_etfs` | justETF screener | Filter by asset class, region, TER, fund size, distribution — the headline feature Ghostfolio cannot do |
+| `compare_etfs` | justETF | Side-by-side: TER, 1/3/5Y returns, fund size, distribution, replication |
+| `get_quote` | Yahoo → justETF Gettex | Latest price; falls back to Gettex live quote if Yahoo fails and an ISIN is provided |
+| `get_history` | yfinance | OHLCV history; configurable period (`1mo`–`max`) and interval (`1d`/`1wk`/`1mo`) |
+| `get_etf_listings` | OpenFIGI | All exchange listings for an ISIN — ticker, exchange code, currency. Use this to find the right Yahoo ticker for a given ISIN (e.g. IWDA on Euronext Amsterdam vs EUNL on Xetra vs SWDA on LSE) |
 
-**Conventions:**
-- TER is a **decimal**, not a percentage. `0.002` = 0.20% (20 bps).
-- All money fields are in **EUR** unless the field name says otherwise.
-- All dates are **ISO 8601** strings (`2009-09-25`).
+**Conventions used throughout:**
+- TER is a **decimal**, not a percentage — `0.002` = 0.20% (20 bps)
+- All money fields are in **EUR** unless the field name says otherwise
+- All dates are **ISO 8601** strings (`2009-09-25`)
+- Returns and volatility are **percentages** (`24.76` = +24.76%)
 
-## Install (local / Claude Desktop)
+## Quick start (local / Claude Desktop on Linux)
 
 ```bash
 git clone https://github.com/pierdom/etf-mcp
@@ -25,14 +27,25 @@ cd etf-mcp
 uv sync
 ```
 
-Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `~/.config/Claude/claude_desktop_config.json` (Linux):
+Verify it works:
+
+```bash
+uv run fastmcp call --server-spec src/etf_mcp/server.py \
+  --target get_etf_profile --input-json '{"isin": "IE00B4L5Y983"}'
+```
+
+Add to `~/.config/Claude/claude_desktop_config.json`:
 
 ```json
 {
   "mcpServers": {
     "etf-mcp": {
-      "command": "uv",
-      "args": ["run", "--project", "/path/to/etf-mcp", "python", "-m", "etf_mcp"],
+      "command": "/home/<you>/.local/bin/uv",
+      "args": [
+        "run",
+        "--project", "/home/<you>/Workspace/etf-mcp",
+        "python", "-m", "etf_mcp"
+      ],
       "env": {
         "MCP_TRANSPORT": "stdio"
       }
@@ -41,16 +54,18 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
 }
 ```
 
+Replace `<you>` with your username. Use `which uv` to confirm the uv path. Then **fully quit and relaunch Claude Desktop** — it does not hot-reload the config. The hammer icon in the input bar should show 6 tools.
+
 ## Homelab deploy (Docker Compose + Tailscale)
 
 ```bash
 cp .env.example .env
-# edit .env — set MCP_HTTP_BEARER_TOKEN to a strong random string
+# Edit .env — set MCP_HTTP_BEARER_TOKEN to a strong random value
 mkdir -p ~/Docker/etf-mcp/data
 docker compose up -d
 ```
 
-Connect from Claude Desktop via the Tailscale address:
+Add to Claude Desktop config on the client machine:
 
 ```json
 {
@@ -71,46 +86,59 @@ Connect from Claude Desktop via the Tailscale address:
 | Variable | Default | Description |
 |---|---|---|
 | `MCP_TRANSPORT` | `stdio` | `stdio` or `http` |
-| `MCP_HTTP_HOST` | `127.0.0.1` | Bind address for HTTP transport |
+| `MCP_HTTP_HOST` | `127.0.0.1` | Bind address for HTTP transport (`0.0.0.0` in Docker) |
 | `MCP_HTTP_PORT` | `8765` | Port for HTTP transport |
 | `MCP_HTTP_BEARER_TOKEN` | — | **Required** when `MCP_TRANSPORT=http` |
 | `ETF_MCP_CACHE` | `~/.cache/etf-mcp/cache.db` | SQLite cache file path |
-| `CACHE_TTL_QUOTE` | `300` | Quote cache TTL in seconds |
-| `CACHE_TTL_PROFILE` | `86400` | Profile/screener cache TTL in seconds |
-| `CACHE_TTL_HISTORY` | `3600` | History cache TTL in seconds |
+| `CACHE_TTL_QUOTE` | `300` | Quote cache TTL in seconds (5 min) |
+| `CACHE_TTL_PROFILE` | `86400` | Profile/screener/listings cache TTL in seconds (24 h) |
+| `CACHE_TTL_HISTORY` | `3600` | History cache TTL in seconds (1 h) |
 | `LOG_LEVEL` | `INFO` | Python log level |
+| `OPENFIGI_API_KEY` | — | Optional. Free key from openfigi.com raises the rate limit from 25 req/min to 25 req/6 s and also populates the `mic_code` field in `get_etf_listings` results |
+
+## Caching
+
+All external calls are cached in a local SQLite database with per-type TTLs. The cache is transparent — repeated tool calls within the TTL window are instant and make no network requests. Delete the cache file to force a refresh.
+
+Every outbound call (to Yahoo Finance, justETF, and OpenFIGI) is logged with latency and status to `~/.cache/etf-mcp/calls.log` (rotating, 5 MB × 3 files). Check this file first when diagnosing data problems.
 
 ## Troubleshooting
 
-### Yahoo Finance returning stale data or 401 errors
+### Yahoo Finance returning stale data or errors
 
-Yahoo occasionally rotates their anti-scraping measures. The server logs every outbound call (with status and latency) to `~/.cache/etf-mcp/calls.log`. Check there first:
+Yahoo's unofficial API changes without notice. Check the call log:
 
 ```bash
 tail -f ~/.cache/etf-mcp/calls.log
 ```
 
-If Yahoo is consistently failing, use `get_quote` with an ISIN to fall back to the justETF Gettex live quote.
+If Yahoo is consistently failing, pass an `isin` argument to `get_quote` — it will fall back to the justETF Gettex live quote automatically.
 
-### justETF screener returning no results
+### justETF screener or profile returning nothing
 
-`search_etfs` results are cached for 24 hours. If you suspect stale data, delete the cache:
-
-```bash
-rm ~/.cache/etf-mcp/cache.db
-# or, in the Docker deployment:
-rm ~/Docker/etf-mcp/data/cache.db
-```
-
-The screener itself calls justETF's overview endpoint, which scrapes HTML. If justETF updates their page structure the `justetf-scraping` library may break. Check for updates:
+`search_etfs` and `get_etf_profile` results are cached for 24 hours. Delete the cache to force a fresh fetch:
 
 ```bash
-uv lock --upgrade-package justetf-scraping
+rm ~/.cache/etf-mcp/cache.db          # local
+rm ~/Docker/etf-mcp/data/cache.db     # Docker
 ```
 
-Then update the pinned commit in `pyproject.toml` after testing.
+The justETF scraper reads HTML pages — if justETF changes their structure the `justetf-scraping` library may break. Check for updates and re-pin the commit in `pyproject.toml`:
+
+```bash
+# See what the latest commit is
+git ls-remote https://github.com/druzsan/justetf-scraping HEAD
+
+# Update pyproject.toml, then:
+uv lock
+uv sync
+uv run python tests/smoke_justetf.py   # verify it still works
+```
+
+### `get_etf_listings` returns no results
+
+OpenFIGI may not have a mapping for very new or obscure ISINs. The `warning` field from the API will appear in `calls.log`. Without `OPENFIGI_API_KEY` set, the `mic_code` field in results is always null — use `exch_code` instead (Bloomberg exchange codes: `GY` = Xetra, `NA` = Euronext Amsterdam, `LN` = LSE, `SW` = SIX Swiss Exchange).
 
 ### Bearer auth rejected (HTTP transport)
 
-- Confirm `MCP_HTTP_BEARER_TOKEN` is set in the environment and the client is sending the same token.
-- For Docker Compose, verify the `.env` file is in the same directory as `compose.yml` and contains `MCP_HTTP_BEARER_TOKEN=<value>`.
+Confirm `MCP_HTTP_BEARER_TOKEN` is set in the server environment and the client is sending an identical value. For Docker Compose, verify `.env` is in the same directory as `compose.yml` and is not empty. Requests with the wrong or missing token receive `HTTP 401` with `WWW-Authenticate: Bearer error="invalid_token"`.
