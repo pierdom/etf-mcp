@@ -1,5 +1,7 @@
 # etf-mcp
 
+[![Docker](https://github.com/pierdom/etf-mcp/actions/workflows/docker.yml/badge.svg)](https://github.com/pierdom/etf-mcp/actions/workflows/docker.yml)
+
 MCP server for ETF research via **justETF**, **Yahoo Finance**, and **OpenFIGI**. Complements a Ghostfolio MCP — this server focuses on fund discovery, profile depth, comparison, and exchange mapping. It does not do portfolio tracking or basic price lookups that Ghostfolio already handles.
 
 ## Tools
