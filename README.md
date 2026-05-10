@@ -56,23 +56,24 @@ Add to `~/.config/Claude/claude_desktop_config.json`:
 
 Replace `<you>` with your username. Use `which uv` to confirm the uv path. Then **fully quit and relaunch Claude Desktop** — it does not hot-reload the config. The hammer icon in the input bar should show 6 tools.
 
-## Homelab deploy (Docker Compose + Tailscale)
+## Docker deploy
 
 ```bash
 cp .env.example .env
 # Edit .env — set MCP_HTTP_BEARER_TOKEN to a strong random value
+#   openssl rand -hex 32
 mkdir -p ~/Docker/etf-mcp/data
 docker compose up -d
 ```
 
-Add to Claude Desktop config on the client machine:
+Add to Claude Desktop config on the client machine, replacing `<host>` with the server's IP or hostname:
 
 ```json
 {
   "mcpServers": {
     "etf-mcp": {
       "type": "http",
-      "url": "http://<tailscale-ip>:8765/mcp",
+      "url": "http://<host>:8765/mcp",
       "headers": {
         "Authorization": "Bearer <your-token>"
       }
@@ -164,4 +165,4 @@ OpenFIGI may not have a mapping for very new or obscure ISINs. The `warning` fie
 
 ### Bearer auth rejected (HTTP transport)
 
-Confirm `MCP_HTTP_BEARER_TOKEN` is set in the server environment and the client is sending an identical value. For Docker Compose, verify `.env` is in the same directory as `compose.yml` and is not empty. Requests with the wrong or missing token receive `HTTP 401` with `WWW-Authenticate: Bearer error="invalid_token"`.
+Confirm `MCP_HTTP_BEARER_TOKEN` is set in the server environment and the client is sending an identical value. For Docker Compose, verify `.env` is in the same directory as `docker-compose.yml` and is not empty. Requests with the wrong or missing token receive `HTTP 401` with `WWW-Authenticate: Bearer error="invalid_token"`.
