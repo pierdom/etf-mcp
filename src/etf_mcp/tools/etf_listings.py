@@ -11,9 +11,9 @@ class EtfListing(BaseModel):
     figi: str | None = Field(None, description="Financial Instrument Global Identifier (Bloomberg)")
     ticker: str | None = Field(None, description="Ticker symbol on this exchange, e.g. 'IWDA' or 'EUNL'")
     name: str | None = None
-    exch_code: str | None = Field(None, description="Bloomberg exchange code, e.g. 'GY' (Xetra), 'NA' (Euronext Amsterdam), 'LN' (LSE), 'EO' (Euronext), 'SW' (SIX)")
-    mic_code: str | None = Field(None, description="MIC exchange code, e.g. 'XETR', 'XAMS', 'XLON'. Only populated when an OPENFIGI_API_KEY is configured.")
-    currency: str | None = None
+    exch_code: str | None = Field(None, description="Bloomberg exchange code, e.g. 'GR' (Xetra), 'EO' (Euronext Amsterdam), 'LN' (LSE), 'SW' (SIX Swiss Exchange)")
+    mic_code: str | None = Field(None, description="ISO 10383 MIC code, e.g. 'XETR', 'XAMS', 'XLON'. Only populated when OPENFIGI_API_KEY is configured.")
+    currency: str | None = Field(None, description="Trading currency. Not returned by the OpenFIGI mapping endpoint — always null.")
     security_type: str | None = None
     market_sector: str | None = None
     security_description: str | None = None
@@ -26,7 +26,7 @@ def register(mcp: FastMCP) -> None:
 
         Uses the OpenFIGI API (official Bloomberg-backed mapping service) to
         find every exchange where the ETF trades — Xetra, Euronext Amsterdam,
-        LSE, and others — along with the ticker symbol and currency for each.
+        LSE, and others — along with the ticker symbol for each.
 
         Use this when you need the right Yahoo Finance ticker for a given ISIN
         (e.g. to pass to get_quote or get_history), or when advising on which
