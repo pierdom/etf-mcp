@@ -4,7 +4,7 @@ from __future__ import annotations
 from fastmcp import FastMCP
 from pydantic import BaseModel, Field
 
-from etf_mcp.sources.openfigi import fetch_listings
+from etf_scout_mcp.sources.openfigi import fetch_listings
 
 
 class EtfListing(BaseModel):

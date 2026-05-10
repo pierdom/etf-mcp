@@ -1,4 +1,4 @@
-from etf_mcp.server import main
+from etf_scout_mcp.server import main
 
 if __name__ == "__main__":
     main()

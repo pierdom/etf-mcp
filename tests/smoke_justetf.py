@@ -1,7 +1,7 @@
 """Smoke test: fetch a real ETF profile and screener results from justETF."""
 import asyncio
 
-from etf_mcp.sources.justetf import fetch_profile, fetch_screener, fetch_summary
+from etf_scout_mcp.sources.justetf import fetch_profile, fetch_screener, fetch_summary
 
 ISIN = "IE00B4L5Y983"  # iShares Core MSCI World
 

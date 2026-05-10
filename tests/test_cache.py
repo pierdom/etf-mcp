@@ -10,7 +10,7 @@ _tmp.close()
 os.environ["ETF_MCP_CACHE"] = _tmp.name
 os.environ["CACHE_TTL_QUOTE"] = "1"  # 1s so the expiry test is fast
 
-from etf_mcp.cache import cached  # noqa: E402
+from etf_scout_mcp.cache import cached  # noqa: E402
 
 call_count = 0
 

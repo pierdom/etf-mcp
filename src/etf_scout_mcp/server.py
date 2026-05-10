@@ -4,8 +4,8 @@ from __future__ import annotations
 from fastmcp import FastMCP
 from fastmcp.server.auth.auth import AccessToken, AuthProvider
 
-from etf_mcp.config import config
-from etf_mcp.tools import etf_compare, etf_listings, etf_profile, history, quote, search
+from etf_scout_mcp.config import config
+from etf_scout_mcp.tools import etf_compare, etf_listings, etf_profile, history, quote, search
 
 
 class _StaticBearerAuth(AuthProvider):
@@ -29,7 +29,7 @@ def _make_mcp() -> FastMCP:
         auth = _StaticBearerAuth(config.http_bearer_token)
 
     return FastMCP(
-        name="etf-mcp",
+        name="etf-scout-mcp",
         instructions="ETF research tools sourced from justETF and Yahoo Finance.",
         auth=auth,
     )

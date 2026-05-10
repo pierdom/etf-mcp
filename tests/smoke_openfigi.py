@@ -1,7 +1,7 @@
 """Smoke test: fetch exchange listings for IWDA from OpenFIGI."""
 import asyncio
 
-from etf_mcp.sources.openfigi import fetch_listings
+from etf_scout_mcp.sources.openfigi import fetch_listings
 
 ISIN = "IE00B4L5Y983"  # iShares Core MSCI World
 

@@ -15,8 +15,8 @@ from requests.adapters import HTTPAdapter as _HTTPAdapter
 import justetf_scraping
 from justetf_scraping.overview import load_overview
 
-from etf_mcp.cache import cached
-from etf_mcp.config import config
+from etf_scout_mcp.cache import cached
+from etf_scout_mcp.config import config
 
 # ---------------------------------------------------------------------------
 # Force a 30 s timeout on every requests.Session that justetf-scraping
@@ -44,7 +44,7 @@ _requests.Session.__init__ = _patched_session_init  # type: ignore[method-assign
 # Logging — same rotating-file pattern as sources/yahoo.py
 # ---------------------------------------------------------------------------
 
-_log = logging.getLogger("etf_mcp.justetf")
+_log = logging.getLogger("etf_scout_mcp.justetf")
 
 
 def _ensure_log_handler() -> None:

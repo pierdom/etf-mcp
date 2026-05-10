@@ -5,8 +5,8 @@ import asyncio
 
 from fastmcp import FastMCP
 
-from etf_mcp.models import EtfSummary
-from etf_mcp.sources.justetf import fetch_summary
+from etf_scout_mcp.models import EtfSummary
+from etf_scout_mcp.sources.justetf import fetch_summary
 
 
 def register(mcp: FastMCP) -> None:

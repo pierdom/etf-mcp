@@ -9,12 +9,12 @@ from typing import Any
 
 import httpx
 
-from etf_mcp.cache import cached
-from etf_mcp.config import config
+from etf_scout_mcp.cache import cached
+from etf_scout_mcp.config import config
 
 _API_URL = "https://api.openfigi.com/v3/mapping"
 
-_log = logging.getLogger("etf_mcp.openfigi")
+_log = logging.getLogger("etf_scout_mcp.openfigi")
 
 
 def _ensure_log_handler() -> None:

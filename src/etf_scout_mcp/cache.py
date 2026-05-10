@@ -8,7 +8,7 @@ import sqlite3
 import time
 from typing import Any, Callable
 
-from etf_mcp.config import config
+from etf_scout_mcp.config import config
 
 _conn: sqlite3.Connection | None = None
 

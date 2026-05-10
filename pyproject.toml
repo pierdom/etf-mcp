@@ -1,5 +1,5 @@
 [project]
-name = "etf-mcp"
+name = "etf-scout-mcp"
 version = "0.1.0"
 description = "MCP server for ETF research via justETF and Yahoo Finance"
 readme = "README.md"
@@ -14,14 +14,14 @@ dependencies = [
 ]
 
 [project.scripts]
-etf-mcp = "etf_mcp.__main__:main"
+etf-scout-mcp = "etf_scout_mcp.__main__:main"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/etf_mcp"]
+packages = ["src/etf_scout_mcp"]
 
 [tool.hatch.metadata]
 allow-direct-references = true

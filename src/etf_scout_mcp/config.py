@@ -25,7 +25,7 @@ class Config:
     )
     cache_path: Path = field(
         default_factory=lambda: Path(
-            os.getenv("ETF_MCP_CACHE", "~/.cache/etf-mcp/cache.db")
+            os.getenv("ETF_SCOUT_MCP_CACHE", "~/.cache/etf-scout-mcp/cache.db")
         ).expanduser()
     )
     ttl_quote: int = field(

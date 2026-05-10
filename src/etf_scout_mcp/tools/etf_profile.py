@@ -3,8 +3,8 @@ from __future__ import annotations
 
 from fastmcp import FastMCP
 
-from etf_mcp.models import Allocation, EtfProfile, Holding
-from etf_mcp.sources.justetf import fetch_profile
+from etf_scout_mcp.models import Allocation, EtfProfile, Holding
+from etf_scout_mcp.sources.justetf import fetch_profile
 
 
 def register(mcp: FastMCP) -> None:

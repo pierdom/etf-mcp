@@ -6,7 +6,7 @@ import asyncio
 from fastmcp import FastMCP
 from pydantic import BaseModel, Field
 
-from etf_mcp.sources import yahoo
+from etf_scout_mcp.sources import yahoo
 
 
 class Quote(BaseModel):

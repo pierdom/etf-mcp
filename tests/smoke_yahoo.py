@@ -1,7 +1,7 @@
 """Smoke test: fetch a real quote and history for IWDA.AS from Yahoo Finance."""
 import asyncio
 
-from etf_mcp.sources.yahoo import fetch_quote, fetch_history
+from etf_scout_mcp.sources.yahoo import fetch_quote, fetch_history
 
 
 async def main() -> None:

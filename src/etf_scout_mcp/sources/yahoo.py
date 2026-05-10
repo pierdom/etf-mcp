@@ -11,14 +11,14 @@ from typing import Any
 import yfinance as yf
 from curl_cffi import requests as cffi_requests
 
-from etf_mcp.cache import cached
-from etf_mcp.config import config
+from etf_scout_mcp.cache import cached
+from etf_scout_mcp.config import config
 
 # ---------------------------------------------------------------------------
 # Logging — rotating file so Tuesday's 429 trail survives a restart
 # ---------------------------------------------------------------------------
 
-_log = logging.getLogger("etf_mcp.yahoo")
+_log = logging.getLogger("etf_scout_mcp.yahoo")
 
 
 def _ensure_log_handler() -> None:

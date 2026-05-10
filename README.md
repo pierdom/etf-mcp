@@ -1,6 +1,6 @@
-# etf-mcp
+# etf-scout-mcp
 
-[![Docker](https://github.com/pierdom/etf-mcp/actions/workflows/docker.yml/badge.svg)](https://github.com/pierdom/etf-mcp/actions/workflows/docker.yml)
+[![Docker](https://github.com/pierdom/etf-scout-mcp/actions/workflows/docker.yml/badge.svg)](https://github.com/pierdom/etf-scout-mcp/actions/workflows/docker.yml)
 
 MCP server for ETF research via **justETF**, **Yahoo Finance**, and **OpenFIGI**. Complements a Ghostfolio MCP — this server focuses on fund discovery, profile depth, comparison, and exchange mapping. It does not do portfolio tracking or basic price lookups that Ghostfolio already handles.
 
@@ -24,15 +24,15 @@ MCP server for ETF research via **justETF**, **Yahoo Finance**, and **OpenFIGI**
 ## Quick start (local / Claude Desktop on Linux)
 
 ```bash
-git clone https://github.com/pierdom/etf-mcp
-cd etf-mcp
+git clone https://github.com/pierdom/etf-scout-mcp
+cd etf-scout-mcp
 uv sync
 ```
 
 Verify it works:
 
 ```bash
-uv run fastmcp call --server-spec src/etf_mcp/server.py \
+uv run fastmcp call --server-spec src/etf_scout_mcp/server.py \
   --target get_etf_profile --input-json '{"isin": "IE00B4L5Y983"}'
 ```
 
@@ -41,12 +41,12 @@ Add to `~/.config/Claude/claude_desktop_config.json`:
 ```json
 {
   "mcpServers": {
-    "etf-mcp": {
+    "etf-scout-mcp": {
       "command": "/home/<you>/.local/bin/uv",
       "args": [
         "run",
-        "--project", "/home/<you>/Workspace/etf-mcp",
-        "python", "-m", "etf_mcp"
+        "--project", "/home/<you>/Workspace/etf-scout-mcp",
+        "python", "-m", "etf_scout_mcp"
       ],
       "env": {
         "MCP_TRANSPORT": "stdio"
@@ -63,22 +63,22 @@ Replace `<you>` with your username. Use `which uv` to confirm the uv path. Then 
 A pre-built multi-arch image (amd64, arm64) is published to the GitHub Container Registry on every push to `main`:
 
 ```bash
-docker pull ghcr.io/pierdom/etf-mcp:edge
+docker pull ghcr.io/pierdom/etf-scout-mcp:edge
 ```
 
 To run it:
 
 ```bash
-mkdir -p ~/Docker/etf-mcp/data
+mkdir -p ~/Docker/etf-scout-mcp/data
 docker run -d --restart unless-stopped \
   -p 8765:8765 \
-  -v ~/Docker/etf-mcp/data:/data \
+  -v ~/Docker/etf-scout-mcp/data:/data \
   -e MCP_TRANSPORT=http \
   -e MCP_HTTP_HOST=0.0.0.0 \
   -e MCP_HTTP_PORT=8765 \
   -e MCP_HTTP_BEARER_TOKEN=<your-token> \
-  -e ETF_MCP_CACHE=/data/cache.db \
-  ghcr.io/pierdom/etf-mcp:edge
+  -e ETF_SCOUT_MCP_CACHE=/data/cache.db \
+  ghcr.io/pierdom/etf-scout-mcp:edge
 ```
 
 Or with Docker Compose using the published image instead of building locally:
@@ -87,7 +87,7 @@ Or with Docker Compose using the published image instead of building locally:
 cp .env.example .env
 # Edit .env — set MCP_HTTP_BEARER_TOKEN to a strong random value
 #   openssl rand -hex 32
-mkdir -p ~/Docker/etf-mcp/data
+mkdir -p ~/Docker/etf-scout-mcp/data
 docker compose up -d
 ```
 
@@ -96,7 +96,7 @@ Add to Claude Desktop config on the client machine, replacing `<host>` with the 
 ```json
 {
   "mcpServers": {
-    "etf-mcp": {
+    "etf-scout-mcp": {
       "type": "http",
       "url": "http://<host>:8765/mcp",
       "headers": {
@@ -115,7 +115,7 @@ Add to Claude Desktop config on the client machine, replacing `<host>` with the 
 | `MCP_HTTP_HOST` | `127.0.0.1` | Bind address for HTTP transport (`0.0.0.0` in Docker) |
 | `MCP_HTTP_PORT` | `8765` | Port for HTTP transport |
 | `MCP_HTTP_BEARER_TOKEN` | — | **Required** when `MCP_TRANSPORT=http` |
-| `ETF_MCP_CACHE` | `~/.cache/etf-mcp/cache.db` | SQLite cache file path |
+| `ETF_SCOUT_MCP_CACHE` | `~/.cache/etf-scout-mcp/cache.db` | SQLite cache file path |
 | `CACHE_TTL_QUOTE` | `300` | Quote cache TTL in seconds (5 min) |
 | `CACHE_TTL_PROFILE` | `86400` | Profile/screener/listings cache TTL in seconds (24 h) |
 | `CACHE_TTL_HISTORY` | `3600` | History cache TTL in seconds (1 h) |
@@ -149,7 +149,7 @@ Add to Claude Desktop config on the client machine, replacing `<host>` with the 
 
 All external calls are cached in a local SQLite database with per-type TTLs. The cache is transparent — repeated tool calls within the TTL window are instant and make no network requests. Delete the cache file to force a refresh.
 
-Every outbound call (to Yahoo Finance, justETF, and OpenFIGI) is logged with latency and status to `~/.cache/etf-mcp/calls.log` (rotating, 5 MB × 3 files). Check this file first when diagnosing data problems.
+Every outbound call (to Yahoo Finance, justETF, and OpenFIGI) is logged with latency and status to `~/.cache/etf-scout-mcp/calls.log` (rotating, 5 MB × 3 files). Check this file first when diagnosing data problems.
 
 ## Troubleshooting
 
@@ -158,7 +158,7 @@ Every outbound call (to Yahoo Finance, justETF, and OpenFIGI) is logged with lat
 Yahoo's unofficial API changes without notice. Check the call log:
 
 ```bash
-tail -f ~/.cache/etf-mcp/calls.log
+tail -f ~/.cache/etf-scout-mcp/calls.log
 ```
 
 If Yahoo is consistently failing, pass an `isin` argument to `get_quote` — it will fall back to the justETF Gettex live quote automatically.
@@ -168,8 +168,8 @@ If Yahoo is consistently failing, pass an `isin` argument to `get_quote` — it 
 `search_etfs` and `get_etf_profile` results are cached for 24 hours. Delete the cache to force a fresh fetch:
 
 ```bash
-rm ~/.cache/etf-mcp/cache.db          # local
-rm ~/Docker/etf-mcp/data/cache.db     # Docker
+rm ~/.cache/etf-scout-mcp/cache.db          # local
+rm ~/Docker/etf-scout-mcp/data/cache.db     # Docker
 ```
 
 The justETF scraper reads HTML pages — if justETF changes their structure the `justetf-scraping` library may break. Check for updates and re-pin the commit in `pyproject.toml`:
