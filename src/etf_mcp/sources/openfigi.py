@@ -47,17 +47,31 @@ async def fetch_listings(isin: str) -> list[dict[str, Any]]:
     """
     _ensure_log_handler()
     t0 = time.monotonic()
-    try:
-        async with httpx.AsyncClient(timeout=10) as client:
-            resp = await client.post(
-                _API_URL,
-                headers=_headers(),
-                json=[{"idType": "ID_ISIN", "idValue": isin}],
-            )
-            resp.raise_for_status()
-    except Exception as exc:
-        _log.warning("error fn=fetch_listings isin=%s latency=%.3fs error=%r", isin, time.monotonic() - t0, exc)
-        raise
+    delays = [1.0, 4.0, 10.0]
+    async with httpx.AsyncClient(timeout=15) as client:
+        for attempt, delay in enumerate(delays + [None]):
+            try:
+                resp = await client.post(
+                    _API_URL,
+                    headers=_headers(),
+                    json=[{"idType": "ID_ISIN", "idValue": isin}],
+                )
+            except Exception as exc:
+                _log.warning("error fn=fetch_listings isin=%s latency=%.3fs error=%r", isin, time.monotonic() - t0, exc)
+                raise
+            if resp.status_code == 429:
+                if delay is None:
+                    _log.warning("error fn=fetch_listings isin=%s status=429 all retries exhausted", isin)
+                    resp.raise_for_status()
+                _log.info("rate_limited fn=fetch_listings isin=%s attempt=%d retry_in=%.1fs", isin, attempt + 1, delay)
+                await asyncio.sleep(delay)
+                continue
+            try:
+                resp.raise_for_status()
+            except Exception as exc:
+                _log.warning("error fn=fetch_listings isin=%s latency=%.3fs error=%r", isin, time.monotonic() - t0, exc)
+                raise
+            break
 
     results = resp.json()
     latency = time.monotonic() - t0
