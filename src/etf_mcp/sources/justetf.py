@@ -2,14 +2,37 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import math
+import time
 from datetime import datetime
+from logging.handlers import RotatingFileHandler
 from typing import Any
 
 import justetf_scraping
 from justetf_scraping.overview import load_overview
 
 from etf_mcp.cache import cached
+from etf_mcp.config import config
+
+# ---------------------------------------------------------------------------
+# Logging — same rotating-file pattern as sources/yahoo.py
+# ---------------------------------------------------------------------------
+
+_log = logging.getLogger("etf_mcp.justetf")
+
+
+def _ensure_log_handler() -> None:
+    if _log.handlers:
+        return
+    config.cache_path.parent.mkdir(parents=True, exist_ok=True)
+    log_path = config.cache_path.parent / "calls.log"
+    handler = RotatingFileHandler(log_path, maxBytes=5 * 1024 * 1024, backupCount=3)
+    handler.setFormatter(
+        logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s")
+    )
+    _log.addHandler(handler)
+    _log.setLevel(config.log_level)
 
 # ---------------------------------------------------------------------------
 # Internal helpers
@@ -65,7 +88,14 @@ async def fetch_profile(isin: str) -> dict[str, Any]:
     TER is decimal (0.002 = 0.20%). fund_size_eur is in EUR (not millions).
     """
     def _inner() -> dict[str, Any]:
-        ov = justetf_scraping.get_etf_overview(isin, include_gettex=False, expand_allocations=True)
+        _ensure_log_handler()
+        t0 = time.monotonic()
+        try:
+            ov = justetf_scraping.get_etf_overview(isin, include_gettex=False, expand_allocations=True)
+        except Exception as exc:
+            _log.warning("error fn=get_etf_overview isin=%s latency=%.3fs error=%r", isin, time.monotonic() - t0, exc)
+            raise
+        _log.info("ok fn=get_etf_overview isin=%s latency=%.3fs", isin, time.monotonic() - t0)
         return {
             "isin": ov["isin"],
             "name": ov.get("name"),
@@ -135,7 +165,14 @@ def _row_to_summary(isin: str, row: Any) -> dict[str, Any]:
 async def fetch_summary(isin: str) -> dict[str, Any] | None:
     """Fetch a lightweight summary row for a single ETF by ISIN from justETF."""
     def _inner() -> dict[str, Any] | None:
-        df = load_overview(isin=isin)
+        _ensure_log_handler()
+        t0 = time.monotonic()
+        try:
+            df = load_overview(isin=isin)
+        except Exception as exc:
+            _log.warning("error fn=load_overview isin=%s latency=%.3fs error=%r", isin, time.monotonic() - t0, exc)
+            raise
+        _log.info("ok fn=load_overview isin=%s rows=%d latency=%.3fs", isin, len(df), time.monotonic() - t0)
         if df.empty:
             return None
         return _row_to_summary(df.index[0], df.iloc[0])
@@ -179,10 +216,16 @@ async def fetch_screener(
     }
 
     def _inner() -> list[dict[str, Any]]:
+        _ensure_log_handler()
         ac = _asset_map.get((asset_class or "").lower(), asset_class)
         rg = _region_map.get((region or "").lower(), region)
-
-        df = load_overview(asset_class=ac, region=rg)
+        t0 = time.monotonic()
+        try:
+            df = load_overview(asset_class=ac, region=rg)
+        except Exception as exc:
+            _log.warning("error fn=load_overview asset_class=%s region=%s latency=%.3fs error=%r", ac, rg, time.monotonic() - t0, exc)
+            raise
+        _log.info("ok fn=load_overview asset_class=%s region=%s rows=%d latency=%.3fs", ac, rg, len(df), time.monotonic() - t0)
 
         # Post-filters
         if max_ter is not None:

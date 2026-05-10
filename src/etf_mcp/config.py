@@ -40,6 +40,9 @@ class Config:
     log_level: str = field(
         default_factory=lambda: os.getenv("LOG_LEVEL", "INFO")
     )
+    openfigi_api_key: str | None = field(
+        default_factory=lambda: os.getenv("OPENFIGI_API_KEY")
+    )
 
 
 config = Config()

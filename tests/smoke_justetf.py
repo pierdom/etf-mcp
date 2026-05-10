@@ -1,7 +1,7 @@
 """Smoke test: fetch a real ETF profile and screener results from justETF."""
 import asyncio
 
-from etf_mcp.sources.justetf import fetch_profile, fetch_screener
+from etf_mcp.sources.justetf import fetch_profile, fetch_screener, fetch_summary
 
 ISIN = "IE00B4L5Y983"  # iShares Core MSCI World
 
@@ -44,6 +44,16 @@ async def main() -> None:
         assert r["fund_size_eur"] is None or r["fund_size_eur"] >= 1_000_000_000, f"size filter broken: {r['fund_size_eur']}"
         print(f"  {r['isin']}  {r['name'][:50]:<50}  TER={r['ter']}  size=€{r['fund_size_eur']:,.0f}")
     print("✓ screener OK")
+
+    print(f"\nFetching summary for {ISIN} (used by compare_etfs)…")
+    summary = await fetch_summary(ISIN)
+    assert summary is not None, "fetch_summary returned None"
+    assert summary["isin"] == ISIN
+    assert summary["ter"] is not None and summary["ter"] < 0.01, f"TER looks wrong: {summary['ter']}"
+    assert summary["fund_size_eur"] is not None and summary["fund_size_eur"] > 1_000_000_000
+    assert summary["return_1y"] is not None, "missing 1Y return"
+    print(f"  TER={summary['ter']}  size=€{summary['fund_size_eur']:,.0f}  1Y={summary['return_1y']}%")
+    print("✓ fetch_summary OK")
 
 
 if __name__ == "__main__":
