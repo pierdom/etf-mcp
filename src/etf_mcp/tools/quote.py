@@ -41,6 +41,8 @@ def register(mcp: FastMCP) -> None:
         """
         try:
             data = await yahoo.fetch_quote(symbol)
+            if data.get("price") is None and isin:
+                raise RuntimeError(f"Yahoo returned no price for {symbol!r}")
             return Quote(source="yahoo", isin=isin, **data)
         except Exception as yahoo_err:
             if not isin:
