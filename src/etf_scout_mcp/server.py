@@ -30,7 +30,7 @@ def _make_mcp() -> FastMCP:
 
     return FastMCP(
         name="etf-scout-mcp",
-        instructions="ETF research tools sourced from justETF and Yahoo Finance.",
+        instructions="ETF research tools sourced from justETF, Yahoo Finance, and OpenFIGI.",
         auth=auth,
     )
 
