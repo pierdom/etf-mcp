@@ -70,7 +70,9 @@ def register(mcp: FastMCP) -> None:
                         "as_of": q["timestamp"].date().isoformat() if q.get("timestamp") else None,
                     }
 
-                data = await asyncio.to_thread(_gettex)
+                data = await asyncio.wait_for(asyncio.to_thread(_gettex), timeout=20.0)
                 return Quote(source="justetf_gettex", isin=isin, **data)
+            except asyncio.TimeoutError:
+                raise RuntimeError(f"Gettex fallback timed out for {isin}") from None
             except Exception:
                 raise yahoo_err  # surface the original Yahoo error if both fail
