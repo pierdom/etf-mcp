@@ -108,7 +108,7 @@ Add to Claude Desktop config on the client machine:
 > Compare IWDA (IE00B4L5Y983), VWCE (IE00BK5BQT80), and XDWD (IE00BJ0KDQ92) side by side — TER, 1Y/3Y/5Y returns, fund size, and replication.
 
 **Finding the right ticker**
-> I want to buy IWDA on Xetra. What is the correct ticker, and how does the Euronext Amsterdam listing differ in currency?
+> I want to buy IWDA on Xetra (exch_code GR) and on Euronext Amsterdam (exch_code EO). What are the correct tickers for each exchange?
 
 **Price and recent performance**
 > What is the current price of EUNL? Then show me its weekly performance over the last 3 months — first bar, last bar, and overall return.
@@ -160,7 +160,7 @@ uv run python tests/smoke_justetf.py   # verify it still works
 
 ### `get_etf_listings` returns no results
 
-OpenFIGI may not have a mapping for very new or obscure ISINs. The `warning` field from the API will appear in `calls.log`. Without `OPENFIGI_API_KEY` set, the `mic_code` field in results is always null — use `exch_code` instead (Bloomberg exchange codes: `GY` = Xetra, `NA` = Euronext Amsterdam, `LN` = LSE, `SW` = SIX Swiss Exchange).
+OpenFIGI may not have a mapping for very new or obscure ISINs. The `warning` field from the API will appear in `calls.log`. Without `OPENFIGI_API_KEY` set, the `mic_code` field in results is always null — use `exch_code` instead (Bloomberg exchange codes: `GR` = Xetra, `EO` = Euronext Amsterdam, `LN` = LSE, `SW` = SIX Swiss Exchange). Note: `currency` is never populated — the OpenFIGI mapping endpoint does not return it.
 
 ### Bearer auth rejected (HTTP transport)
 
