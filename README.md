@@ -96,6 +96,29 @@ Add to Claude Desktop config on the client machine:
 | `LOG_LEVEL` | `INFO` | Python log level |
 | `OPENFIGI_API_KEY` | — | Optional. Free key from openfigi.com raises the rate limit from 25 req/min to 25 req/6 s and also populates the `mic_code` field in `get_etf_listings` results |
 
+## Sample prompts
+
+**Fund discovery**
+> Find accumulating equity ETFs covering the world with TER ≤ 0.20% and fund size above €1B. List the top 5 with name, TER, and fund size.
+
+**Deep profile**
+> Give me the full profile for IWDA (IE00B4L5Y983): replication method, TER, fund size, distribution policy, top 5 holdings, and country breakdown.
+
+**Side-by-side comparison**
+> Compare IWDA (IE00B4L5Y983), VWCE (IE00BK5BQT80), and XDWD (IE00BJ0KDQ92) side by side — TER, 1Y/3Y/5Y returns, fund size, and replication.
+
+**Finding the right ticker**
+> I want to buy IWDA on Xetra. What is the correct ticker, and how does the Euronext Amsterdam listing differ in currency?
+
+**Price and recent performance**
+> What is the current price of EUNL? Then show me its weekly performance over the last 3 months — first bar, last bar, and overall return.
+
+**Screener + deep dive**
+> Find the cheapest physically-replicating bond ETFs domiciled in Ireland with fund size above €500M. Pick the most interesting one and show me its full profile.
+
+**Income-focused search**
+> Find distributing equity ETFs focused on Europe with TER below 0.30%. Rank them by 1-year return.
+
 ## Caching
 
 All external calls are cached in a local SQLite database with per-type TTLs. The cache is transparent — repeated tool calls within the TTL window are instant and make no network requests. Delete the cache file to force a refresh.
