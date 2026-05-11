@@ -1,8 +1,11 @@
+name: etf_scout_mcp
+
 services:
   etf-scout-mcp:
+    container_name: etf-scout-mcp
     image: ghcr.io/pierdom/etf-scout-mcp:edge
-    build: .
     restart: unless-stopped
+    env_file: .env
     ports:
       - "8765:8765"
     volumes:

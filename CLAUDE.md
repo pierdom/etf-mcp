@@ -87,6 +87,22 @@ Copy `.env.example` to `.env` before running with HTTP transport.
 - Dates as ISO 8601
 - Returns and volatility as percentages
 
+## Deployment
+
+**Claude Desktop** only supports stdio MCP servers via `claude_desktop_config.json`. Use:
+```json
+{
+  "etf-scout-mcp": {
+    "command": "uv",
+    "args": ["--directory", "/Users/pierdom/Repos/etf-scout-mcp", "run", "etf-scout-mcp"],
+    "env": { "MCP_TRANSPORT": "stdio" }
+  }
+}
+```
+HTTP entries in that file are silently skipped. Remote HTTP MCP in Claude Desktop goes through Anthropic's cloud (Settings → Integrations) and requires a publicly reachable server.
+
+**Claude Code CLI** supports HTTP MCP servers. The Docker container (`docker compose up -d`) runs on port 8765 for this.
+
 ## Fragile dependencies
 
 - **justetf-scraping** is pinned to a specific Git commit (HTML scraping breaks when justETF changes its page structure). If scraping fails, check `git ls-remote` on the upstream repo for a newer commit and re-pin in `pyproject.toml`.
