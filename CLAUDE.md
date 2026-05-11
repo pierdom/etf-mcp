@@ -31,6 +31,12 @@ uv run fastmcp call --server-spec src/etf_scout_mcp/server.py \
   --target get_etf_profile --input-json '{"isin": "IE00B4L5Y983"}'
 ```
 
+To inspect or interactively test all registered tools:
+```bash
+uv run fastmcp inspect src/etf_scout_mcp/server.py
+uv run fastmcp dev src/etf_scout_mcp/server.py   # opens MCP Inspector in browser
+```
+
 ## Architecture
 
 ```
@@ -48,9 +54,15 @@ src/etf_scout_mcp/
     ├── quote.py, history.py, etf_listings.py
 ```
 
+**The 6 MCP tools:** `get_etf_profile`, `search_etfs`, `compare_etfs`, `get_quote`, `get_history`, `get_etf_listings`.
+
 **Request flow:** MCP client → `server.py` (tool dispatch) → `tools/` (input validation) → `cache.py` (@cached check) → `sources/` (network fetch) → Pydantic model → client.
 
 **Fallback logic in `quote.py`:** Yahoo Finance is tried first; if it fails with a bare ISIN, it retries using the justETF Gettex price.
+
+**Adding a new tool:** Create `tools/new_tool.py` with a `register(mcp: FastMCP) -> None` function, then call `new_tool.register(mcp)` in `server.py`. Tools are registered at import time so `fastmcp inspect/dev` sees them without calling `main()`.
+
+**`@cached` decorator:** Only three valid `ttl_key` values — `"quote"`, `"profile"`, `"history"`. Adding a source function that uses a different key will raise a `KeyError` at runtime.
 
 **Logging:** All outbound calls (latency, status) are written to `~/.cache/etf-scout-mcp/calls.log` (5 MB × 3 rotating). Check here first when debugging data-source failures.
 
@@ -63,6 +75,7 @@ src/etf_scout_mcp/
 | `MCP_HTTP_HOST` / `MCP_HTTP_PORT` | `127.0.0.1` / `8765` | HTTP bind |
 | `ETF_SCOUT_MCP_CACHE` | `~/.cache/etf-scout-mcp/cache.db` | SQLite path |
 | `CACHE_TTL_QUOTE` / `_PROFILE` / `_HISTORY` | `300` / `86400` / `3600` | Per-type TTLs in seconds |
+| `LOG_LEVEL` | `INFO` | Standard Python log level |
 | `OPENFIGI_API_KEY` | — | Optional; raises rate limit and adds `mic_code` to listings |
 
 Copy `.env.example` to `.env` before running with HTTP transport.
