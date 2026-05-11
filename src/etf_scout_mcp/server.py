@@ -25,7 +25,7 @@ def _make_mcp() -> FastMCP:
     auth = None
     if config.transport == "http":
         if not config.http_bearer_token:
-            raise RuntimeError("MCP_HTTP_BEARER_TOKEN must be set when MCP_TRANSPORT=http")
+            raise RuntimeError("ETF_SCOUT_MCP_HTTP_BEARER_TOKEN must be set when ETF_SCOUT_MCP_TRANSPORT=http")
         auth = _StaticBearerAuth(config.http_bearer_token)
 
     return FastMCP(

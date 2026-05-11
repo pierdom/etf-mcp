@@ -12,16 +12,16 @@ load_dotenv()
 @dataclass
 class Config:
     transport: str = field(
-        default_factory=lambda: os.getenv("MCP_TRANSPORT", "stdio")
+        default_factory=lambda: os.getenv("ETF_SCOUT_MCP_TRANSPORT", "stdio")
     )
     http_host: str = field(
-        default_factory=lambda: os.getenv("MCP_HTTP_HOST", "127.0.0.1")
+        default_factory=lambda: os.getenv("ETF_SCOUT_MCP_HTTP_HOST", "127.0.0.1")
     )
     http_port: int = field(
-        default_factory=lambda: int(os.getenv("MCP_HTTP_PORT", "8765"))
+        default_factory=lambda: int(os.getenv("ETF_SCOUT_MCP_HTTP_PORT", "8765"))
     )
     http_bearer_token: str | None = field(
-        default_factory=lambda: os.getenv("MCP_HTTP_BEARER_TOKEN")
+        default_factory=lambda: os.getenv("ETF_SCOUT_MCP_HTTP_BEARER_TOKEN")
     )
     cache_path: Path = field(
         default_factory=lambda: Path(
@@ -29,16 +29,16 @@ class Config:
         ).expanduser()
     )
     ttl_quote: int = field(
-        default_factory=lambda: int(os.getenv("CACHE_TTL_QUOTE", "300"))
+        default_factory=lambda: int(os.getenv("ETF_SCOUT_MCP_CACHE_TTL_QUOTE", "300"))
     )
     ttl_profile: int = field(
-        default_factory=lambda: int(os.getenv("CACHE_TTL_PROFILE", "86400"))
+        default_factory=lambda: int(os.getenv("ETF_SCOUT_MCP_CACHE_TTL_PROFILE", "86400"))
     )
     ttl_history: int = field(
-        default_factory=lambda: int(os.getenv("CACHE_TTL_HISTORY", "3600"))
+        default_factory=lambda: int(os.getenv("ETF_SCOUT_MCP_CACHE_TTL_HISTORY", "3600"))
     )
     log_level: str = field(
-        default_factory=lambda: os.getenv("LOG_LEVEL", "INFO")
+        default_factory=lambda: os.getenv("ETF_SCOUT_MCP_LOG_LEVEL", "INFO")
     )
     openfigi_api_key: str | None = field(
         default_factory=lambda: os.getenv("OPENFIGI_API_KEY")

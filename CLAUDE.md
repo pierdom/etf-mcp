@@ -70,12 +70,12 @@ src/etf_scout_mcp/
 
 | Variable | Default | Notes |
 |---|---|---|
-| `MCP_TRANSPORT` | `stdio` | `stdio` or `http` |
-| `MCP_HTTP_BEARER_TOKEN` | — | Required when transport is `http` |
-| `MCP_HTTP_HOST` / `MCP_HTTP_PORT` | `127.0.0.1` / `8765` | HTTP bind |
+| `ETF_SCOUT_MCP_TRANSPORT` | `stdio` | `stdio` or `http` |
+| `ETF_SCOUT_MCP_HTTP_BEARER_TOKEN` | — | Required when transport is `http` |
+| `ETF_SCOUT_MCP_HTTP_HOST` / `_HTTP_PORT` | `127.0.0.1` / `8765` | HTTP bind |
 | `ETF_SCOUT_MCP_CACHE` | `~/.cache/etf-scout-mcp/cache.db` | SQLite path |
-| `CACHE_TTL_QUOTE` / `_PROFILE` / `_HISTORY` | `300` / `86400` / `3600` | Per-type TTLs in seconds |
-| `LOG_LEVEL` | `INFO` | Standard Python log level |
+| `ETF_SCOUT_MCP_CACHE_TTL_QUOTE` / `_PROFILE` / `_HISTORY` | `300` / `86400` / `3600` | Per-type TTLs in seconds |
+| `ETF_SCOUT_MCP_LOG_LEVEL` | `INFO` | Standard Python log level |
 | `OPENFIGI_API_KEY` | — | Optional; raises rate limit and adds `mic_code` to listings |
 
 Copy `.env.example` to `.env` before running with HTTP transport.

@@ -49,7 +49,7 @@ Add to `~/.config/Claude/claude_desktop_config.json`:
         "python", "-m", "etf_scout_mcp"
       ],
       "env": {
-        "MCP_TRANSPORT": "stdio"
+        "ETF_SCOUT_MCP_TRANSPORT": "stdio"
       }
     }
   }
@@ -73,10 +73,10 @@ mkdir -p ~/Docker/etf-scout-mcp/data
 docker run -d --restart unless-stopped \
   -p 8765:8765 \
   -v ~/Docker/etf-scout-mcp/data:/data \
-  -e MCP_TRANSPORT=http \
-  -e MCP_HTTP_HOST=0.0.0.0 \
-  -e MCP_HTTP_PORT=8765 \
-  -e MCP_HTTP_BEARER_TOKEN=<your-token> \
+  -e ETF_SCOUT_MCP_TRANSPORT=http \
+  -e ETF_SCOUT_MCP_HTTP_HOST=0.0.0.0 \
+  -e ETF_SCOUT_MCP_HTTP_PORT=8765 \
+  -e ETF_SCOUT_MCP_HTTP_BEARER_TOKEN=<your-token> \
   -e ETF_SCOUT_MCP_CACHE=/data/cache.db \
   ghcr.io/pierdom/etf-scout-mcp:edge
 ```
@@ -85,7 +85,7 @@ Or with Docker Compose using the published image instead of building locally:
 
 ```bash
 cp .env.example .env
-# Edit .env — set MCP_HTTP_BEARER_TOKEN to a strong random value
+# Edit .env — set ETF_SCOUT_MCP_HTTP_BEARER_TOKEN to a strong random value
 #   openssl rand -hex 32
 mkdir -p ~/Docker/etf-scout-mcp/data
 docker compose up -d
@@ -111,15 +111,15 @@ Add to Claude Desktop config on the client machine, replacing `<host>` with the 
 
 | Variable | Default | Description |
 |---|---|---|
-| `MCP_TRANSPORT` | `stdio` | `stdio` or `http` |
-| `MCP_HTTP_HOST` | `127.0.0.1` | Bind address for HTTP transport (`0.0.0.0` in Docker) |
-| `MCP_HTTP_PORT` | `8765` | Port for HTTP transport |
-| `MCP_HTTP_BEARER_TOKEN` | — | **Required** when `MCP_TRANSPORT=http` |
+| `ETF_SCOUT_MCP_TRANSPORT` | `stdio` | `stdio` or `http` |
+| `ETF_SCOUT_MCP_HTTP_HOST` | `127.0.0.1` | Bind address for HTTP transport (`0.0.0.0` in Docker) |
+| `ETF_SCOUT_MCP_HTTP_PORT` | `8765` | Port for HTTP transport |
+| `ETF_SCOUT_MCP_HTTP_BEARER_TOKEN` | — | **Required** when `ETF_SCOUT_MCP_TRANSPORT=http` |
 | `ETF_SCOUT_MCP_CACHE` | `~/.cache/etf-scout-mcp/cache.db` | SQLite cache file path |
-| `CACHE_TTL_QUOTE` | `300` | Quote cache TTL in seconds (5 min) |
-| `CACHE_TTL_PROFILE` | `86400` | Profile/screener/listings cache TTL in seconds (24 h) |
-| `CACHE_TTL_HISTORY` | `3600` | History cache TTL in seconds (1 h) |
-| `LOG_LEVEL` | `INFO` | Python log level |
+| `ETF_SCOUT_MCP_CACHE_TTL_QUOTE` | `300` | Quote cache TTL in seconds (5 min) |
+| `ETF_SCOUT_MCP_CACHE_TTL_PROFILE` | `86400` | Profile/screener/listings cache TTL in seconds (24 h) |
+| `ETF_SCOUT_MCP_CACHE_TTL_HISTORY` | `3600` | History cache TTL in seconds (1 h) |
+| `ETF_SCOUT_MCP_LOG_LEVEL` | `INFO` | Python log level |
 | `OPENFIGI_API_KEY` | — | Optional. Free key from openfigi.com raises the rate limit from 25 req/min to 25 req/6 s and also populates the `mic_code` field in `get_etf_listings` results |
 
 ## Sample prompts
@@ -190,4 +190,4 @@ OpenFIGI may not have a mapping for very new or obscure ISINs. The `warning` fie
 
 ### Bearer auth rejected (HTTP transport)
 
-Confirm `MCP_HTTP_BEARER_TOKEN` is set in the server environment and the client is sending an identical value. For Docker Compose, verify `.env` is in the same directory as `docker-compose.yml` and is not empty. Requests with the wrong or missing token receive `HTTP 401` with `WWW-Authenticate: Bearer error="invalid_token"`.
+Confirm `ETF_SCOUT_MCP_HTTP_BEARER_TOKEN` is set in the server environment and the client is sending an identical value. For Docker Compose, verify `.env` is in the same directory as `docker-compose.yml` and is not empty. Requests with the wrong or missing token receive `HTTP 401` with `WWW-Authenticate: Bearer error="invalid_token"`.
