@@ -15,8 +15,14 @@ COPY src/ ./src/
 RUN uv sync --frozen --no-dev --no-editable
 
 # Non-root user
-RUN useradd --system --no-create-home etfmcp
+RUN useradd --system --no-create-home etfmcp \
+    && mkdir -p /data && chown etfmcp /data
 USER etfmcp
+
+# Persist OIDCProxy's encrypted client store / DCR registrations across container
+# recreation (FastMCP derives its data dir from platformdirs → XDG_DATA_HOME). Mount
+# /data as a volume when using OIDC so remote sessions survive restarts.
+ENV XDG_DATA_HOME=/data
 
 EXPOSE 8765
 
