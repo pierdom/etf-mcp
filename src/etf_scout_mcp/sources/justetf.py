@@ -273,12 +273,16 @@ async def fetch_screener(
     max_ter: float | None = None,
     min_fund_size_eur: float | None = None,
     distribution: str | None = None,
+    query: str | None = None,
+    provider: str | None = None,
     limit: int = 20,
 ) -> list[dict[str, Any]]:
     """Query the justETF screener and return matching ETFs.
 
     max_ter is decimal (0.002 = 0.20%). min_fund_size_eur is in EUR.
     Returns are percentages (24.76 means +24.76%).
+    query maps to justETF's &query= parameter (accepts ISIN or name substring).
+    provider maps to justETF's &ic= parameter (e.g. "iShares", "Vanguard").
     """
     # Map friendly strings to justETF query values
     _asset_map = {
@@ -307,13 +311,27 @@ async def fetch_screener(
         rg = _region_map.get((region or "").lower(), region)
         t0 = time.monotonic()
         try:
-            df = load_overview(asset_class=ac, region=rg)
+            # provider is NOT passed to load_overview — the &ic= API parameter
+            # requires undocumented internal IDs that differ from display names
+            # (e.g. "Amundi" and "SPDR" return 0 rows). Post-filter instead.
+            df = load_overview(asset_class=ac, region=rg, isin=query)
         except Exception as exc:
-            _log.warning("error fn=load_overview asset_class=%s region=%s latency=%.3fs error=%r", ac, rg, time.monotonic() - t0, exc)
+            _log.warning(
+                "error fn=load_overview asset_class=%s region=%s query=%s provider=%s latency=%.3fs error=%r",
+                ac, rg, query, provider, time.monotonic() - t0, exc,
+            )
             raise
-        _log.info("ok fn=load_overview asset_class=%s region=%s rows=%d latency=%.3fs", ac, rg, len(df), time.monotonic() - t0)
+        _log.info(
+            "ok fn=load_overview asset_class=%s region=%s query=%s provider=%s rows=%d latency=%.3fs",
+            ac, rg, query, provider, len(df), time.monotonic() - t0,
+        )
+
+        if df.empty:
+            return []
 
         # Post-filters
+        if provider is not None:
+            df = df[df["name"].apply(_extract_provider).str.lower() == provider.lower()]
         if max_ter is not None:
             # library TER is percent; max_ter is decimal → compare after converting
             df = df[df["ter"].notna() & (df["ter"] / 100 <= max_ter)]
@@ -331,5 +349,8 @@ async def fetch_screener(
     try:
         return await asyncio.wait_for(asyncio.to_thread(_inner), timeout=60.0)
     except asyncio.TimeoutError:
-        _log.warning("timeout fn=load_overview asset_class=%s region=%s after 60s", asset_class, region)
+        _log.warning(
+            "timeout fn=load_overview asset_class=%s region=%s query=%s provider=%s after 60s",
+            asset_class, region, query, provider,
+        )
         raise RuntimeError("justETF screener request timed out") from None

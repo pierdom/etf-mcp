@@ -15,6 +15,8 @@ def register(mcp: FastMCP) -> None:
         max_ter: float | None = None,
         min_fund_size_eur: float | None = None,
         distribution: str | None = None,
+        query: str | None = None,
+        provider: str | None = None,
         limit: int = 20,
     ) -> list[EtfSummary]:
         """Search and filter ETFs using the justETF screener.
@@ -34,6 +36,11 @@ def register(mcp: FastMCP) -> None:
         max_ter:     Maximum TER as a decimal (0.002 = 0.20%, 20 bps)
         min_fund_size_eur: Minimum fund size in EUR (1_000_000_000 = €1B)
         distribution: 'Accumulating' or 'Distributing'
+        query:       Free-text search — fund name substring or ISIN,
+                     e.g. 'S&P 500', 'MSCI World ex USA', 'Amundi Prime',
+                     'IE00B4L5Y983'
+        provider:    Filter by fund provider name, e.g. 'iShares', 'Vanguard',
+                     'Amundi', 'Xtrackers', 'SPDR', 'Invesco'
         limit:       Maximum number of results to return (default 20)
         """
         rows = await fetch_screener(
@@ -42,6 +49,8 @@ def register(mcp: FastMCP) -> None:
             max_ter=max_ter,
             min_fund_size_eur=min_fund_size_eur,
             distribution=distribution,
+            query=query,
+            provider=provider,
             limit=limit,
         )
         return [EtfSummary(**r) for r in rows]
