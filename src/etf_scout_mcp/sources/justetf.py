@@ -266,6 +266,15 @@ async def fetch_summary(isin: str) -> dict[str, Any] | None:
         raise RuntimeError(f"justETF request timed out for {isin}") from None
 
 
+_SORT_COLS = {
+    "ter": ("ter", True),               # ascending — lower cost is better
+    "fund_size": ("size", False),        # descending — largest first
+    "return_1y": ("last_year", False),
+    "return_3y": ("last_three_years", False),
+    "return_5y": ("last_five_years", False),
+}
+
+
 @cached(ttl_key="profile")
 async def fetch_screener(
     asset_class: str | None = None,
@@ -275,6 +284,11 @@ async def fetch_screener(
     distribution: str | None = None,
     query: str | None = None,
     provider: str | None = None,
+    currency: str | None = None,
+    currency_hedged: bool | None = None,
+    replication: str | None = None,
+    sustainability: bool | None = None,
+    sort_by: str | None = None,
     limit: int = 20,
 ) -> list[dict[str, Any]]:
     """Query the justETF screener and return matching ETFs.
@@ -282,7 +296,8 @@ async def fetch_screener(
     max_ter is decimal (0.002 = 0.20%). min_fund_size_eur is in EUR.
     Returns are percentages (24.76 means +24.76%).
     query maps to justETF's &query= parameter (accepts ISIN or name substring).
-    provider maps to justETF's &ic= parameter (e.g. "iShares", "Vanguard").
+    provider is a post-filter by fund provider (e.g. "iShares", "Amundi").
+    sort_by: 'ter' | 'fund_size' | 'return_1y' | 'return_3y' | 'return_5y'.
     """
     # Map friendly strings to justETF query values
     _asset_map = {
@@ -311,19 +326,19 @@ async def fetch_screener(
         rg = _region_map.get((region or "").lower(), region)
         t0 = time.monotonic()
         try:
-            # provider is NOT passed to load_overview — the &ic= API parameter
-            # requires undocumented internal IDs that differ from display names
-            # (e.g. "Amundi" and "SPDR" return 0 rows). Post-filter instead.
+            # provider / index_provider are NOT passed to load_overview — the
+            # &ic= / &indexProvider= API params require undocumented internal IDs
+            # (e.g. "Amundi" and "S&P" return 0 rows). Post-filter instead.
             df = load_overview(asset_class=ac, region=rg, isin=query)
         except Exception as exc:
             _log.warning(
-                "error fn=load_overview asset_class=%s region=%s query=%s provider=%s latency=%.3fs error=%r",
-                ac, rg, query, provider, time.monotonic() - t0, exc,
+                "error fn=load_overview asset_class=%s region=%s query=%s latency=%.3fs error=%r",
+                ac, rg, query, time.monotonic() - t0, exc,
             )
             raise
         _log.info(
-            "ok fn=load_overview asset_class=%s region=%s query=%s provider=%s rows=%d latency=%.3fs",
-            ac, rg, query, provider, len(df), time.monotonic() - t0,
+            "ok fn=load_overview asset_class=%s region=%s query=%s rows=%d latency=%.3fs",
+            ac, rg, query, len(df), time.monotonic() - t0,
         )
 
         if df.empty:
@@ -333,14 +348,24 @@ async def fetch_screener(
         if provider is not None:
             df = df[df["name"].apply(_extract_provider).str.lower() == provider.lower()]
         if max_ter is not None:
-            # library TER is percent; max_ter is decimal → compare after converting
             df = df[df["ter"].notna() & (df["ter"] / 100 <= max_ter)]
         if min_fund_size_eur is not None:
-            # library size is EUR millions
             df = df[df["size"].notna() & (df["size"] * 1_000_000 >= min_fund_size_eur)]
         if distribution is not None:
-            dist_norm = distribution.lower()
-            df = df[df["dividends"].astype(str).str.lower() == dist_norm]
+            df = df[df["dividends"].astype(str).str.lower() == distribution.lower()]
+        if currency is not None:
+            df = df[df["currency"].astype(str).str.upper() == currency.upper()]
+        if currency_hedged is not None:
+            df = df[df["hedged"] == currency_hedged]
+        if replication is not None:
+            df = df[df["replication"].astype(str).str.lower().str.contains(replication.lower(), na=False)]
+        if sustainability is not None:
+            df = df[df["is_sustainable"] == sustainability]
+
+        # Sort
+        if sort_by is not None and sort_by in _SORT_COLS:
+            col, ascending = _SORT_COLS[sort_by]
+            df = df.sort_values(col, ascending=ascending, na_position="last")
 
         df = df.head(limit)
 
@@ -349,8 +374,5 @@ async def fetch_screener(
     try:
         return await asyncio.wait_for(asyncio.to_thread(_inner), timeout=60.0)
     except asyncio.TimeoutError:
-        _log.warning(
-            "timeout fn=load_overview asset_class=%s region=%s query=%s provider=%s after 60s",
-            asset_class, region, query, provider,
-        )
+        _log.warning("timeout fn=load_overview asset_class=%s region=%s after 60s", asset_class, region)
         raise RuntimeError("justETF screener request timed out") from None
