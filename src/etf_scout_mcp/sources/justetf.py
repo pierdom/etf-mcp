@@ -63,6 +63,59 @@ def _ensure_log_handler() -> None:
 # Internal helpers
 # ---------------------------------------------------------------------------
 
+# Ordered longest-first so compound names match before their single-word prefix.
+_PROVIDER_PREFIXES: list[tuple[str, str]] = [
+    ("BNP Paribas", "BNP Paribas"),
+    ("Legal & General", "Legal & General"),
+    ("First Trust", "First Trust"),
+    ("Global X", "Global X"),
+    ("Goldman Sachs", "Goldman Sachs"),
+    ("State Street SPDR", "SPDR"),
+    ("State Street", "SPDR"),
+    ("Franklin Templeton", "Franklin Templeton"),
+    ("Van Eck", "VanEck"),
+    ("VanEck", "VanEck"),
+    ("JPMorgan", "JPMorgan"),
+    ("J.P. Morgan", "JPMorgan"),
+    ("JP Morgan", "JPMorgan"),
+    ("WisdomTree", "WisdomTree"),
+    ("iShares", "iShares"),
+    ("Vanguard", "Vanguard"),
+    ("Xtrackers", "Xtrackers"),
+    ("Amundi", "Amundi"),
+    ("Invesco", "Invesco"),
+    ("Franklin", "Franklin Templeton"),
+    ("Fidelity", "Fidelity"),
+    ("Lyxor", "Lyxor"),
+    ("Ossiam", "Ossiam"),
+    ("HANetf", "HANetf"),
+    ("Tabula", "Tabula"),
+    ("Robeco", "Robeco"),
+    ("Pictet", "Pictet"),
+    ("Natixis", "Natixis"),
+    ("Nikko", "Nikko"),
+    ("Mirae", "Mirae"),
+    ("Rize", "Rize"),
+    ("SPDR", "SPDR"),
+    ("PIMCO", "PIMCO"),
+    ("HSBC", "HSBC"),
+    ("UBS", "UBS"),
+    ("AXA", "AXA"),
+    ("DWS", "DWS"),
+]
+
+
+def _extract_provider(name: str | None) -> str | None:
+    """Infer fund provider from the ETF name prefix."""
+    if not name:
+        return None
+    name_lower = name.lower()
+    for prefix, canonical in _PROVIDER_PREFIXES:
+        if name_lower.startswith(prefix.lower()):
+            return canonical
+    return None
+
+
 _DATE_FORMATS = (
     "%d %B %Y",    # "25 September 2009"
     "%d/%m/%Y",    # "31/03/2026"
@@ -174,7 +227,7 @@ def _row_to_summary(isin: str, row: Any) -> dict[str, Any]:
         "isin": isin,
         "name": row.get("name"),
         "ticker": row.get("ticker"),
-        "fund_provider": None,
+        "fund_provider": _extract_provider(row.get("name")),
         "fund_domicile": str(row.get("domicile_country")) if row.get("domicile_country") else None,
         "fund_size_eur": (float(row["size"]) * 1_000_000) if row.get("size") and not math.isnan(float(row["size"])) else None,
         "ter": _ter_to_decimal(row.get("ter")),
