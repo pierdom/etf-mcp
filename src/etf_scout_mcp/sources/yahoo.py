@@ -134,13 +134,18 @@ async def fetch_history(
         date_col = df.columns[0]  # "Date" or "Datetime"
         rows = []
         for _, row in df.iterrows():
+            # Skip the live/forming bar that yfinance appends during market hours:
+            # it has NaN OHLC (→ None) but a non-zero partial volume, making it
+            # look like a data gap rather than an in-progress session.
+            if row["Close"] != row["Close"]:  # NaN check
+                continue
             dt = row[date_col]
             rows.append({
                 "date": dt.date().isoformat() if hasattr(dt, "date") else str(dt),
                 "open": round(float(row["Open"]), 6) if row["Open"] == row["Open"] else None,
                 "high": round(float(row["High"]), 6) if row["High"] == row["High"] else None,
                 "low": round(float(row["Low"]), 6) if row["Low"] == row["Low"] else None,
-                "close": round(float(row["Close"]), 6) if row["Close"] == row["Close"] else None,
+                "close": round(float(row["Close"]), 6),
                 "volume": int(row["Volume"]) if row["Volume"] == row["Volume"] else None,
             })
         return rows
