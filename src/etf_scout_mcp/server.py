@@ -5,7 +5,7 @@ from fastmcp import FastMCP
 from fastmcp.server.auth.auth import AccessToken, AuthProvider
 
 from etf_scout_mcp.config import config
-from etf_scout_mcp.tools import etf_compare, etf_listings, etf_profile, history, quote, search
+from etf_scout_mcp.tools import batch_quote, etf_compare, etf_listings, etf_profile, history, quote, search
 
 
 class _StaticBearerAuth(AuthProvider):
@@ -70,6 +70,7 @@ mcp = _make_mcp()
 # without having to call main().
 etf_profile.register(mcp)
 quote.register(mcp)
+batch_quote.register(mcp)
 history.register(mcp)
 etf_compare.register(mcp)
 search.register(mcp)
