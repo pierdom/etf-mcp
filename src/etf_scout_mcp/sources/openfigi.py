@@ -115,3 +115,78 @@ async def fetch_ticker_for_exchange(isin: str, mic_code: str) -> str | None:
         if listing.get("mic_code") == mic_code:
             return listing.get("ticker")
     return None
+
+
+# Bloomberg exchange code → Yahoo Finance ticker suffix.
+# Ordered by preference: Xetra first (highest EUR liquidity for EU ETFs),
+# then Euronext Amsterdam, LSE, and the rest.
+_EXCH_YAHOO: dict[str, str] = {
+    # Xetra variants
+    "GR": ".DE", "GF": ".DE", "GD": ".DE", "GS": ".DE",
+    "GM": ".DE", "GI": ".DE", "GH": ".DE", "GT": ".DE",
+    "GZ": ".DE",
+    # Euronext Amsterdam
+    "NA": ".AS", "EO": ".AS",
+    # LSE
+    "LN": ".L",
+    # Euronext Paris
+    "FP": ".PA",
+    # Borsa Italiana
+    "IM": ".MI",
+    # SIX Swiss
+    "SW": ".SW", "SE": ".SW",
+    # Madrid
+    "SM": ".MC",
+    # Brussels
+    "BB": ".BR",
+    # Stockholm
+    "SS": ".ST",
+    # Helsinki
+    "FH": ".HE",
+    # Oslo
+    "NO": ".OL",
+    # Copenhagen
+    "DC": ".CO",
+}
+
+# Preference order: we pick the first listing whose exch_code is in this list.
+_EXCH_PREFERENCE = [
+    "GR", "GF", "GD", "GS", "GM", "GI", "GH", "GT", "GZ",  # Xetra
+    "NA", "EO",   # Euronext Amsterdam
+    "LN",         # LSE
+    "FP",         # Euronext Paris
+    "IM",         # Borsa Italiana
+    "SW", "SE",   # SIX Swiss
+    "SM",         # Madrid
+    "BB",         # Brussels
+    "SS",         # Stockholm
+]
+
+
+async def resolve_yahoo_ticker(isin: str) -> str | None:
+    """Resolve an ISIN to the best Yahoo Finance ticker string.
+
+    Uses OpenFIGI to get all exchange listings, then picks the most
+    liquid/preferred exchange and appends its Yahoo suffix.
+    Returns None if no suitable listing is found.
+
+    Examples: 'IE00B4L5Y983' → 'EUNL.DE', 'IE00BK5BQT80' → 'VWCE.DE'
+    """
+    listings = await fetch_listings(isin)
+    if not listings:
+        return None
+
+    # Build a map of exch_code → ticker for quick lookup
+    by_exch: dict[str, str] = {}
+    for listing in listings:
+        ec = listing.get("exch_code")
+        tk = listing.get("ticker")
+        if ec and tk and ec not in by_exch:
+            by_exch[ec] = tk
+
+    for exch in _EXCH_PREFERENCE:
+        if exch in by_exch:
+            suffix = _EXCH_YAHOO.get(exch, "")
+            return f"{by_exch[exch]}{suffix}"
+
+    return None

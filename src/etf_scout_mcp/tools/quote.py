@@ -7,6 +7,7 @@ from fastmcp import FastMCP
 from pydantic import BaseModel, Field
 
 from etf_scout_mcp.sources import yahoo
+from etf_scout_mcp.sources.openfigi import resolve_yahoo_ticker
 
 
 class Quote(BaseModel):
@@ -26,24 +27,40 @@ class Quote(BaseModel):
 
 def register(mcp: FastMCP) -> None:
     @mcp.tool()
-    async def get_quote(symbol: str, isin: str | None = None) -> Quote:
+    async def get_quote(symbol: str | None = None, isin: str | None = None) -> Quote:
         """Return the latest price quote for an ETF.
 
-        Tries Yahoo Finance first using the ticker symbol (e.g. 'IWDA.AS',
-        'VWCE.DE', 'CSPX.L'). If Yahoo fails and an ISIN is provided, falls
-        back to the justETF Gettex live quote (EUR, European hours only).
+        Accepts a Yahoo Finance ticker, an ISIN, or both. When only an ISIN
+        is given, the ticker is auto-resolved via OpenFIGI (Xetra preferred,
+        then Euronext Amsterdam, LSE, etc.). If Yahoo fails, falls back to
+        the justETF Gettex live quote (EUR, European hours only).
 
         Use this for a current price check. Use get_history for OHLCV series.
         This tool is for research only — for portfolio valuation, pair it
         with a portfolio tool such as Ghostfolio (ghostfolio-mcp).
 
-        symbol: Yahoo Finance ticker, e.g. 'IWDA.AS' or 'VWCE.DE'
-        isin:   Optional ISIN for Gettex fallback, e.g. 'IE00B4L5Y983'
+        symbol: Yahoo Finance ticker, e.g. 'IWDA.AS' or 'VWCE.DE'.
+                Optional when isin is provided.
+        isin:   ISIN, e.g. 'IE00B4L5Y983'. Used for ticker auto-resolution
+                and as Gettex fallback when Yahoo fails.
         """
+        if not symbol and not isin:
+            raise ValueError("Provide at least one of: symbol, isin")
+
+        # Auto-resolve ticker from ISIN when no symbol is given
+        resolved_symbol = symbol
+        if not resolved_symbol:
+            resolved_symbol = await resolve_yahoo_ticker(isin)  # type: ignore[arg-type]
+            if not resolved_symbol:
+                raise RuntimeError(
+                    f"Could not resolve a Yahoo Finance ticker for ISIN {isin!r}. "
+                    "Try passing the ticker directly, e.g. 'EUNL.DE' or 'IWDA.AS'."
+                )
+
         try:
-            data = await yahoo.fetch_quote(symbol)
+            data = await yahoo.fetch_quote(resolved_symbol)
             if data.get("price") is None and isin:
-                raise RuntimeError(f"Yahoo returned no price for {symbol!r}")
+                raise RuntimeError(f"Yahoo returned no price for {resolved_symbol!r}")
             return Quote(source="yahoo", isin=isin, **data)
         except Exception as yahoo_err:
             if not isin:
@@ -59,7 +76,7 @@ def register(mcp: FastMCP) -> None:
                         raise RuntimeError("no gettex quote received")
                     q = quotes[0]
                     return {
-                        "symbol": symbol,
+                        "symbol": resolved_symbol,
                         "currency": q.get("currency", "EUR"),
                         "price": q.get("last"),
                         "previous_close": None,
